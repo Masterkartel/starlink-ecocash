@@ -1,0 +1,431 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Starlink to Cell — Powered by EcoCash</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family:Inter,system-ui,Arial;
+      background:linear-gradient(180deg,#f7fbff,#e8f3ff);
+      -webkit-font-smoothing:antialiased;
+      padding:18px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+    }
+
+    .page{
+      width:100%;
+      max-width:960px;
+      background:#ffffff;
+      border-radius:16px;
+      box-shadow:0 18px 40px rgba(15,23,42,0.08);
+      padding:20px 20px 24px;
+    }
+
+    .header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+
+    .brand-main{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .brand-main img{
+      height:34px;
+    }
+
+    .title-block h1{
+      margin:0;
+      font-size:20px;
+      color:#0f172a;
+    }
+    .title-block p{
+      margin:4px 0 0;
+      font-size:13px;
+      color:#64748b;
+    }
+
+    .powered{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color:#64748b;
+    }
+    .powered img{
+      height:26px;
+    }
+
+    .plans-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:14px;
+    }
+
+    .plan-card{
+      background:#f8fbff;
+      border-radius:12px;
+      padding:14px;
+      border:1px solid #e5edff;
+      cursor:pointer;
+      transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
+    }
+    .plan-card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 12px 24px rgba(15,23,42,0.07);
+      border-color:#3b82f6;
+    }
+    .plan-name{
+      font-size:15px;
+      font-weight:600;
+      color:#0f172a;
+      margin-bottom:2px;
+    }
+    .plan-duration{
+      font-size:12px;
+      color:#64748b;
+      margin-bottom:6px;
+    }
+    .plan-price{
+      font-size:17px;
+      font-weight:700;
+      color:#1d4ed8;
+      margin-bottom:8px;
+    }
+    .plan-tag{
+      font-size:11px;
+      padding:3px 7px;
+      border-radius:999px;
+      background:#e0f2fe;
+      color:#0369a1;
+      display:inline-block;
+      margin-bottom:6px;
+    }
+    .plan-cta{
+      font-size:12px;
+      color:#1d4ed8;
+      font-weight:500;
+      margin-top:4px;
+    }
+
+    .note{
+      margin-top:12px;
+      font-size:12px;
+      color:#6b7280;
+    }
+
+    /* Modal */
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,0.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:40;
+    }
+    .modal-box{
+      background:#ffffff;
+      max-width:420px;
+      width:100%;
+      border-radius:14px;
+      box-shadow:0 18px 40px rgba(15,23,42,0.2);
+      padding:18px 18px 20px;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:8px;
+    }
+    .modal-title{
+      font-size:16px;
+      font-weight:600;
+      color:#0f172a;
+    }
+    .modal-close{
+      border:0;
+      background:transparent;
+      cursor:pointer;
+      font-size:18px;
+      line-height:1;
+      color:#6b7280;
+    }
+    .modal-body{
+      font-size:14px;
+      color:#4b5563;
+      margin-bottom:12px;
+    }
+    .modal-body p{
+      margin:0 0 7px;
+    }
+    .modal-details{
+      background:#eff4ff;
+      border-radius:10px;
+      padding:10px;
+      border:1px solid #dbe3ff;
+      font-size:13px;
+      color:#1f2933;
+      margin-bottom:12px;
+    }
+    .modal-footer{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .btn{
+      border-radius:10px;
+      padding:9px 14px;
+      border:0;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+    }
+    .btn-ghost{
+      background:#e5e7eb;
+      color:#111827;
+    }
+    .btn-primary{
+      background:#1d4ed8;
+      color:#ffffff;
+    }
+
+    @media(max-width:720px){
+      .plans-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media(max-width:480px){
+      .page{padding:16px}
+      .plans-grid{grid-template-columns:1fr}
+      .title-block h1{font-size:18px}
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="brand-main">
+        <!-- Optional Starlink logo -->
+        <!-- <img src="assets/starlink.png" alt="Starlink logo"> -->
+        <div class="title-block">
+          <h1>Starlink to Cell — Data Plans</h1>
+          <p>Fast, reliable satellite data, paid instantly via EcoCash.</p>
+        </div>
+      </div>
+      <div class="powered">
+        <span>Powered by</span>
+        <img src="assets/EconetLogo.png" alt="Econet logo">
+      </div>
+    </header>
+
+    <section class="plans">
+      <div class="plans-grid">
+        <button class="plan-card" data-plan-id="15gb">
+          <div class="plan-tag">Best for light users</div>
+          <div class="plan-name">15GB Data</div>
+          <div class="plan-duration">7-Day Plan</div>
+          <div class="plan-price">USD 0.99</div>
+          <div class="plan-cta">View details &amp; pay →</div>
+        </button>
+
+        <button class="plan-card" data-plan-id="35gb">
+          <div class="plan-tag">Balanced</div>
+          <div class="plan-name">35GB Data</div>
+          <div class="plan-duration">14-Day Plan</div>
+          <div class="plan-price">USD 1.99</div>
+          <div class="plan-cta">View details &amp; pay →</div>
+        </button>
+
+        <button class="plan-card" data-plan-id="50gb">
+          <div class="plan-tag">Heavy use</div>
+          <div class="plan-name">50GB Data</div>
+          <div class="plan-duration">21-Day Plan</div>
+          <div class="plan-price">USD 2.99</div>
+          <div class="plan-cta">View details &amp; pay →</div>
+        </button>
+
+        <button class="plan-card" data-plan-id="unlimited">
+          <div class="plan-tag">Most popular</div>
+          <div class="plan-name">Monthly Unlimited</div>
+          <div class="plan-duration">30-Day Plan</div>
+          <div class="plan-price">USD 3.99</div>
+          <div class="plan-cta">View details &amp; pay →</div>
+        </button>
+      </div>
+
+      <div class="note">
+        Selecting a plan will redirect you to a secure EcoCash login page.  
+        Your Starlink to Cell plan will be activated after our team enrolls your line.
+      </div>
+    </section>
+  </div>
+
+  <!-- Plan details modal -->
+  <div class="modal-overlay" id="planModal" aria-hidden="true">
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Plan details</div>
+        <button class="modal-close" id="closeModal" aria-label="Close">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modalPlanSummary"></p>
+        <div class="modal-details">
+          <div id="modalPlanSpecs"></div>
+        </div>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:0">
+          You’ll log in with EcoCash to complete payment. Once payment is confirmed, our team will enroll your line on the selected Starlink to Cell plan as soon as possible.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelPlan">Cancel</button>
+        <button class="btn btn-primary" id="payButton">Pay with EcoCash</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Plan data
+    const plans = {
+      "15gb": {
+        id: "15gb",
+        name: "15GB Data — 7 Day Plan",
+        shortName: "15GB 7-Day",
+        price: "USD 0.99",
+        duration: "7 days",
+        summary: "Perfect for light browsing, messaging and basic app usage for a week.",
+        specs: [
+          "15GB total Starlink to Cell data bundle",
+          "Valid for 7 days from activation",
+          "Ideal for travellers or short projects"
+        ]
+      },
+      "35gb": {
+        id: "35gb",
+        name: "35GB Data — 14 Day Plan",
+        shortName: "35GB 14-Day",
+        price: "USD 1.99",
+        duration: "14 days",
+        summary: "Great for regular browsing, social media and video calls over two weeks.",
+        specs: [
+          "35GB total Starlink to Cell data bundle",
+          "Valid for 14 days from activation",
+          "Balanced option for active users"
+        ]
+      },
+      "50gb": {
+        id: "50gb",
+        name: "50GB Data — 21 Day Plan",
+        shortName: "50GB 21-Day",
+        price: "USD 2.99",
+        duration: "21 days",
+        summary: "For heavier use — streaming, uploads and online work for most of the month.",
+        specs: [
+          "50GB total Starlink to Cell data bundle",
+          "Valid for 21 days from activation",
+          "Recommended for power users"
+        ]
+      },
+      "unlimited": {
+        id: "unlimited",
+        name: "Monthly Unlimited Plan",
+        shortName: "Monthly Unlimited",
+        price: "USD 3.99",
+        duration: "30 days",
+        summary: "Unlimited Starlink to Cell usage for the month, subject to fair use policies.",
+        specs: [
+          "Unlimited Starlink to Cell data usage",
+          "Valid for 30 days from activation",
+          "Best for always-on connectivity"
+        ]
+      }
+    };
+
+    const modal = document.getElementById('planModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalPlanSummary = document.getElementById('modalPlanSummary');
+    const modalPlanSpecs = document.getElementById('modalPlanSpecs');
+    const payButton = document.getElementById('payButton');
+    const closeModalBtn = document.getElementById('closeModal');
+    const cancelPlanBtn = document.getElementById('cancelPlan');
+
+    let selectedPlan = null;
+
+    function openModal(planId){
+      const plan = plans[planId];
+      if (!plan) return;
+
+      selectedPlan = plan;
+
+      modalTitle.textContent = plan.name;
+      modalPlanSummary.textContent = plan.summary;
+
+      modalPlanSpecs.innerHTML = `
+        <div><strong>Price:</strong> ${plan.price}</div>
+        <div><strong>Validity:</strong> ${plan.duration}</div>
+        <ul style="margin:8px 0 0 18px;padding:0;">
+          ${plan.specs.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+      `;
+
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden','false');
+    }
+
+    function closeModal(){
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden','true');
+      selectedPlan = null;
+    }
+
+    // Wire up plan cards
+    document.querySelectorAll('.plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.getAttribute('data-plan-id');
+        openModal(id);
+      });
+    });
+
+    // Pay button → save selection + go to login.html
+    payButton.addEventListener('click', () => {
+      if (!selectedPlan) return;
+
+      // Store plan in sessionStorage so login/thank-you pages can read it
+      try {
+        sessionStorage.setItem('selectedPlan', JSON.stringify(selectedPlan));
+      } catch(e){}
+
+      window.location.href = 'login.html';
+    });
+
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelPlanBtn.addEventListener('click', closeModal);
+
+    // Close when clicking outside box
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    // Close with Esc
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false'){
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>
